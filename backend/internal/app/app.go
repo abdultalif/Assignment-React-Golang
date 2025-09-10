@@ -1,16 +1,25 @@
 package app
 
-// import (
-// 	"backend-service/config"
-// 	"log"
-// )
+import (
+	"backend-service/config"
+	"backend-service/internal/logger"
+	"log"
 
-// func RunServer() {
-// 	cfg := config.NewConfig()
+	"github.com/gin-gonic/gin"
+)
 
-// 	db, err := cfg.ConnectionPostgres()
-// 	if err != nil {
-// 		log.Fatalf("[RunServer-2] failed to connect postgres: %v", err)
-// 		return
-// 	}
-// }
+func RunServer() {
+	cfg := config.NewConfig()
+
+	_, err := cfg.ConnectionPostgres()
+	if err != nil {
+		log.Fatalf("[RunServer-2] failed to connect postgres: %v", err)
+		return
+	}
+
+	logger.InitLogger()
+
+	r := gin.Default()
+
+	r.Run(cfg.App.AppPort)
+}
