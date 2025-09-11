@@ -19,3 +19,13 @@ Content-Type: application/json
   "buyer_id": "user-1"
 }
 
+
+### Create settlement job
+POST {{url}}/jobs/settlement
+Content-Type: application/json
+
+{
+  "from": "2025-09-10",
+  "to": "2025-09-12"
+}
+

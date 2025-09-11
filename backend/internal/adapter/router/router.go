@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(orderHandler handler.OrderHandlerInterface) *gin.Engine {
+func SetupRouter(orderHandler handler.OrderHandlerInterface, jobHandler handler.JobHandlerInterface) *gin.Engine {
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {
@@ -15,6 +15,8 @@ func SetupRouter(orderHandler handler.OrderHandlerInterface) *gin.Engine {
 
 	r.POST("/orders", orderHandler.CreateOrder)
 	r.GET("/orders/:orderID", orderHandler.GetOrderByID)
+
+	r.POST("/jobs/settlement", jobHandler.CreateSettlementJob)
 
 	return r
 }

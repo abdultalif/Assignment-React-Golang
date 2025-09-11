@@ -21,3 +21,8 @@ type JobEntity struct {
 	StartedAt    *time.Time
 	CompletedAt  *time.Time
 }
+
+type SettlementJobParams struct {
+	From string
+	To   string
+}

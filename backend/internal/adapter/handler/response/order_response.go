@@ -22,3 +22,8 @@ type ProductDetails struct {
 	Name       string `json:"name"`
 	PriceCents int    `json:"price_cents"`
 }
+
+type CreateJobResponse struct {
+	JobID  uuid.UUID `json:"job_id"`
+	Status string    `json:"status"`
+}

@@ -46,12 +46,16 @@ func RunServer() {
 
 	productRepo := repository.NewProductRepository(db.DB)
 	orderRepo := repository.NewOrderRepository(db.DB)
+	jobRepo := repository.NewJobRepository(db.DB)
+	transactionRepo := repository.NewTransactionRepository(db.DB)
 
 	orderService := service.NewOrderService(orderRepo, productRepo)
+	jobService := service.NewJobService(jobRepo, transactionRepo)
 
 	orderHandler := handler.NewOrderHandler(orderService, customValidator)
+	jobHandler := handler.NewJobHandler(jobService, customValidator)
 
-	r = router.SetupRouter(orderHandler)
+	r = router.SetupRouter(orderHandler, jobHandler)
 
 	log.Printf("Starting server on port %s", cfg.App.Port)
 	if err := r.Run(":" + cfg.App.Port); err != nil {
