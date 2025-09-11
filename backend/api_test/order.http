@@ -24,12 +24,12 @@ POST {{url}}/jobs/settlement
 Content-Type: application/json
 
 {
-  "from": "2025-01-12",
-  "to": "2025-01-14"
+  "from": "2025-01-10",
+  "to": "2025-01-15"
 }
 
 
 ### Get job by ID
-GET {{url}}/jobs/65b19474-75e0-4f6f-ab25-9552b18a3050
+GET {{url}}/jobs/a345dd08-6718-4d59-bbaa-0b2688f95b08
 Accept: application/json
 

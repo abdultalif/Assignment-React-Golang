@@ -15,9 +15,14 @@ type PostgresDB struct {
 	DBMaxIdle int    `json:"db_max_idle"`
 }
 
+type Workers struct {
+	Count int `json:"count"`
+}
+
 type Config struct {
 	App      App        `json:"app"`
 	Postgres PostgresDB `json:"postgres"`
+	WORKERS  Workers    `json:"workers"`
 }
 
 func NewConfig() *Config {
@@ -33,6 +38,9 @@ func NewConfig() *Config {
 			DBName:    viper.GetString("DATABASE_NAME"),
 			DBMaxOpen: viper.GetInt("DATABASE_MAX_OPEN_CONNECTION"),
 			DBMaxIdle: viper.GetInt("DATABASE_MAX_IDLE_CONNECTION"),
+		},
+		WORKERS: Workers{
+			Count: viper.GetInt("WORKERS_COUNT"),
 		},
 	}
 }

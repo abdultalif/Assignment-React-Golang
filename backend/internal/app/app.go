@@ -8,6 +8,7 @@ import (
 	"backend-service/internal/core/service"
 	"backend-service/internal/logger"
 	"backend-service/pkg/validator"
+	"context"
 	"log"
 	"time"
 
@@ -48,14 +49,21 @@ func RunServer() {
 	orderRepo := repository.NewOrderRepository(db.DB)
 	jobRepo := repository.NewJobRepository(db.DB)
 	transactionRepo := repository.NewTransactionRepository(db.DB)
+	settlementRepo := repository.NewSettlementRepository(db.DB)
 
 	orderService := service.NewOrderService(orderRepo, productRepo)
-	jobService := service.NewJobService(jobRepo, transactionRepo)
+	jobService := service.NewJobService(cfg, jobRepo, transactionRepo, settlementRepo)
 
 	orderHandler := handler.NewOrderHandler(orderService, customValidator)
 	jobHandler := handler.NewJobHandler(jobService, customValidator)
 
 	r = router.SetupRouter(orderHandler, jobHandler)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	go jobService.StartWorkerPool(ctx)
+	log.Println("Settlement worker pool started")
 
 	log.Printf("Starting server on port %s", cfg.App.Port)
 	if err := r.Run(":" + cfg.App.Port); err != nil {

@@ -26,3 +26,12 @@ type SettlementJobParams struct {
 	From string
 	To   string
 }
+
+type SettlementJob struct {
+	ID        uuid.UUID
+	From      time.Time
+	To        time.Time
+	RunID     string
+	BatchSize int
+	Cancelled chan bool
+}

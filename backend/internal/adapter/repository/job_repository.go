@@ -6,6 +6,7 @@ import (
 	"backend-service/internal/core/domain/model"
 	"context"
 	"errors"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -15,10 +16,114 @@ import (
 type JobRepositoryInterface interface {
 	Create(ctx context.Context, job *entity.JobEntity) (uuid.UUID, error)
 	GetByID(ctx context.Context, jobID uuid.UUID) (*entity.JobEntity, error)
+	UpdateStatus(ctx context.Context, jobID uuid.UUID, status string, errorMessage *string) error
+	UpdateStartedAt(ctx context.Context, jobID uuid.UUID, startedAt *time.Time) error
+	UpdateProgress(ctx context.Context, jobID uuid.UUID, progress int, processed int64) error
+	Complete(ctx context.Context, jobID uuid.UUID, resultPath string, completedAt *time.Time) error
+	UpdateCompletedAt(ctx context.Context, jobID uuid.UUID, completedAt *time.Time) error
 }
 
 type JobRepository struct {
 	db *gorm.DB
+}
+
+// UpdateCompletedAt implements JobRepositoryInterface.
+func (j *JobRepository) UpdateCompletedAt(ctx context.Context, jobID uuid.UUID, completedAt *time.Time) error {
+
+	err := j.db.WithContext(ctx).
+		Model(&model.JobModel{}).
+		Where("id = ?", jobID).
+		Update("completed_at", completedAt).Error
+
+	if err != nil {
+		log.Error().Err(err).Str("job_id", jobID.String()).Msg("[JobRepository] UpdateCompletedAt: failed to update completed_at")
+		return err
+	}
+
+	return nil
+
+}
+
+// Complete implements JobRepositoryInterface.
+func (j *JobRepository) Complete(ctx context.Context, jobID uuid.UUID, resultPath string, completedAt *time.Time) error {
+
+	err := j.db.WithContext(ctx).
+		Model(&model.JobModel{}).
+		Where("id = ?", jobID).
+		Updates(map[string]interface{}{
+			"status":       "COMPLETED",
+			"progress":     100,
+			"result_path":  resultPath,
+			"completed_at": completedAt,
+		}).Error
+
+	if err != nil {
+		log.Error().Err(err).Str("job_id", jobID.String()).Msg("[JobRepository] Complete: failed to mark job as completed")
+		return err
+	}
+
+	return nil
+
+}
+
+// UpdateProgress implements JobRepositoryInterface.
+func (j *JobRepository) UpdateProgress(ctx context.Context, jobID uuid.UUID, progress int, processed int64) error {
+	err := j.db.WithContext(ctx).
+		Model(&model.JobModel{}).
+		Where("id = ?", jobID).
+		Updates(map[string]interface{}{
+			"progress":  progress,
+			"processed": processed,
+		}).Error
+
+	if err != nil {
+		log.Error().Err(err).Str("job_id", jobID.String()).Msg("[JobRepository] UpdateProgress: failed to update job progress")
+		return err
+	}
+
+	return nil
+}
+
+// UpdateStartedAt implements JobRepositoryInterface.
+func (j *JobRepository) UpdateStartedAt(ctx context.Context, jobID uuid.UUID, startedAt *time.Time) error {
+
+	err := j.db.WithContext(ctx).
+		Model(&model.JobModel{}).
+		Where("id = ?", jobID).
+		Update("started_at", startedAt).Error
+
+	if err != nil {
+		log.Error().Err(err).Str("job_id", jobID.String()).Msg("[JobRepository] UpdateStartedAt: failed to update started_at")
+		return err
+	}
+
+	return nil
+
+}
+
+// UpdateStatus implements JobRepositoryInterface.
+func (j *JobRepository) UpdateStatus(ctx context.Context, jobID uuid.UUID, status string, errorMessage *string) error {
+
+	updates := map[string]interface{}{
+		"status": status,
+	}
+
+	if errorMessage != nil {
+		updates["error_message"] = *errorMessage
+	}
+
+	err := j.db.WithContext(ctx).
+		Model(&model.JobModel{}).
+		Where("id = ?", jobID).
+		Updates(updates).Error
+
+	if err != nil {
+		log.Error().Err(err).Str("job_id", jobID.String()).Msg("[JobRepository] UpdateStatus: failed to update job status")
+		return err
+	}
+
+	return nil
+
 }
 
 // GetByID implements JobRepositoryInterface.
