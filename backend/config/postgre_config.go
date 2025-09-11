@@ -40,6 +40,11 @@ func (cfg Config) ConnectionPostgres() (*Postgres, error) {
 		return nil, err
 	}
 
+	if err := seeds.SeedTransactions(context.Background(), 1000000); err != nil {
+		log.Error().Err(err).Msg("Failed to seed transactions")
+		return nil, err
+	}
+
 	sqlDB.SetMaxOpenConns(cfg.Postgres.DBMaxOpen)
 	sqlDB.SetMaxIdleConns(cfg.Postgres.DBMaxIdle)
 

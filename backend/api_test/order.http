@@ -25,7 +25,7 @@ POST {{url}}/jobs/settlement
 Content-Type: application/json
 
 {
-  "from": "2025-09-10",
-  "to": "2025-09-12"
+  "from": "2025-01-13",
+  "to": "2025-01-14"
 }
 
