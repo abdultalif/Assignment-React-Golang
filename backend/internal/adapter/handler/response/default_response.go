@@ -7,7 +7,7 @@ type DefaultResponse struct {
 	Data    any  `json:"data"`
 }
 
-func ResponseError(code int, message string) DefaultResponse {
+func ResponseError(code int, message any) DefaultResponse {
 	return DefaultResponse{Success: false, Code: code, Message: message, Data: nil}
 }
 

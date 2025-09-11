@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRouter(orderHandler handler.OrderHandler) *gin.Engine {
+func SetupRouter(orderHandler handler.OrderHandlerInterface) *gin.Engine {
 	r := gin.Default()
 
 	r.GET("/health", func(c *gin.Context) {

@@ -12,7 +12,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
 	"github.com/rs/zerolog/log"
 )
 
@@ -21,7 +20,7 @@ type OrderHandlerInterface interface {
 }
 type OrderHandler struct {
 	orderService service.OrderServiceInterface
-	validator    *validator.Validate
+	validator    *v.Validator
 }
 
 // CreateOrder implements OrderHandlerInterface.
@@ -39,11 +38,11 @@ func (o *OrderHandler) CreateOrder(c *gin.Context) {
 		return
 	}
 
-	if err := o.validator.Struct(req); err != nil {
+	if err := o.validator.Validate(req); err != nil {
 		log.Error().Err(err).Msg("[OrderHandler-2] Create")
 
 		if ve, ok := err.(v.ValidationError); ok {
-			c.JSON(http.StatusUnprocessableEntity, response.ResponseError(http.StatusUnprocessableEntity, ve.Error()))
+			c.JSON(http.StatusUnprocessableEntity, response.ResponseError(http.StatusUnprocessableEntity, ve.Errors))
 			return
 		}
 
@@ -79,6 +78,6 @@ func (o *OrderHandler) CreateOrder(c *gin.Context) {
 
 }
 
-func NewOrderHandler() OrderHandlerInterface {
-	return &OrderHandler{}
+func NewOrderHandler(orderService service.OrderServiceInterface, validator *v.Validator) OrderHandlerInterface {
+	return &OrderHandler{orderService: orderService, validator: validator}
 }

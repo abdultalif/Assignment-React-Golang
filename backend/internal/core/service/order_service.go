@@ -11,7 +11,6 @@ import (
 
 type OrderServiceInterface interface {
 	CreateOrder(ctx context.Context, order entity.OrderEntity) (*entity.OrderEntity, error)
-	// CreateOrder(ctx context.Context, productID uint, quantity int, buyerID string) (*entity.Order, error)
 }
 
 type OrderService struct {
@@ -47,15 +46,20 @@ func (o *OrderService) CreateOrder(ctx context.Context, order entity.OrderEntity
 		Status:     "COMPLETED",
 	}
 
-	err = o.orderRepo.Create(ctx, *newOrder)
+	orderID, err := o.orderRepo.Create(ctx, *newOrder)
 	if err != nil {
 		return nil, err
 	}
+
+	newOrder.ID = orderID
 
 	return newOrder, nil
 
 }
 
-func NewOrderService() OrderServiceInterface {
-	return &OrderService{}
+func NewOrderService(orderRepo repository.OrderRepositoryInterface, productRepo repository.ProductRepositoryInterface) OrderServiceInterface {
+	return &OrderService{
+		orderRepo:   orderRepo,
+		productRepo: productRepo,
+	}
 }

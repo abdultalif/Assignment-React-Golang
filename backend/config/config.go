@@ -3,7 +3,7 @@ package config
 import "github.com/spf13/viper"
 
 type App struct {
-	AppPort string `json:"app_port"`
+	Port string `json:"app_port"`
 }
 type PostgresDB struct {
 	Host      string `json:"host"`
@@ -23,7 +23,7 @@ type Config struct {
 func NewConfig() *Config {
 	return &Config{
 		App: App{
-			AppPort: viper.GetString("APP_PORT"),
+			Port: viper.GetString("APP_PORT"),
 		},
 		Postgres: PostgresDB{
 			Host:      viper.GetString("DATABASE_HOST"),
