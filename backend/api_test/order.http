@@ -1,12 +1,11 @@
 @url = http://localhost:8080
-@order_id = befa2802-c2c7-4d2e-a07c-3f0d72ed745c
 
 ### Health check
 GET {{url}}/health
 Accept: application/json
 
 ### Get order by ID
-GET {{url}}/orders/{{order_id}}
+GET {{url}}/orders/befa2802-c2c7-4d2e-a07c-3f0d72ed745c
 Accept: application/json
 
 ### Create order
@@ -25,7 +24,12 @@ POST {{url}}/jobs/settlement
 Content-Type: application/json
 
 {
-  "from": "2025-01-13",
+  "from": "2025-01-12",
   "to": "2025-01-14"
 }
+
+
+### Get job by ID
+GET {{url}}/jobs/65b19474-75e0-4f6f-ab25-9552b18a3050
+Accept: application/json
 

@@ -9,4 +9,6 @@ var (
 	ErrOrderNotFound = errors.New("order not found")
 
 	ErrInvalidDateRange = errors.New("invalid date range")
+
+	ErrJobNotFound = errors.New("job not found")
 )

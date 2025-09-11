@@ -14,11 +14,17 @@ import (
 
 type JobServiceInterface interface {
 	CreateSettlementJob(ctx context.Context, from string, to string) (*entity.JobEntity, error)
+	GetJob(ctx context.Context, jobID uuid.UUID) (*entity.JobEntity, error)
 }
 
 type JobService struct {
 	jobRepo         repository.JobRepositoryInterface
 	transactionRepo repository.TransactionRepositoryInterface
+}
+
+// GetJob implements JobServiceInterface.
+func (j *JobService) GetJob(ctx context.Context, jobID uuid.UUID) (*entity.JobEntity, error) {
+	return j.jobRepo.GetByID(ctx, jobID)
 }
 
 // CreateSettlementJob implements JobServiceInterface.

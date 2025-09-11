@@ -8,18 +8,62 @@ import (
 	v "backend-service/pkg/validator"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
 type JobHandlerInterface interface {
 	CreateSettlementJob(c *gin.Context)
+	GetJob(c *gin.Context)
 }
 
 type JobHandler struct {
 	jobService service.JobServiceInterface
 	validator  *v.Validator
+}
+
+// GetJob implements JobHandlerInterface.
+func (j *JobHandler) GetJob(c *gin.Context) {
+
+	var (
+		ctx = c.Request.Context()
+		res = response.JobStatusResponse{}
+	)
+
+	jobID, err := uuid.Parse(c.Param("jobID"))
+	if err != nil {
+		log.Error().Err(err).Msg("[JobHandler-1] GetJob: invalid job ID")
+		c.JSON(http.StatusBadRequest, response.ResponseError(http.StatusBadRequest, "invalid job ID"))
+		return
+	}
+
+	job, err := j.jobService.GetJob(ctx, jobID)
+	if err != nil {
+		log.Error().Err(err).Msg("[JobHandler-2] GetJob: failed to get job")
+		if errors.Is(err, errs.ErrJobNotFound) {
+			c.JSON(http.StatusNotFound, response.ResponseError(http.StatusNotFound, err.Error()))
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, response.ResponseError(http.StatusInternalServerError, err.Error()))
+			return
+		}
+	}
+
+	res.JobID = job.ID
+	res.Status = job.Status
+	res.Total = job.Total
+	res.Progress = job.Progress
+	res.Processed = job.Processed
+
+	if job.Status == "COMPLETED" && job.ResultPath != nil {
+		downloadURL := "/downloads/" + strings.TrimSuffix(strings.TrimPrefix(*job.ResultPath, "/tmp/settlements/"), ".csv") + ".csv"
+		res.DownloadURL = &downloadURL
+	}
+
+	c.JSON(http.StatusOK, response.ResponseSuccess(http.StatusOK, "success", res))
 }
 
 // CreateSettlementJob implements JobHandlerInterface.

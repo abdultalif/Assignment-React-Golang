@@ -27,3 +27,12 @@ type CreateJobResponse struct {
 	JobID  uuid.UUID `json:"job_id"`
 	Status string    `json:"status"`
 }
+
+type JobStatusResponse struct {
+	JobID       uuid.UUID `json:"job_id"`
+	Status      string    `json:"status"`
+	Progress    int       `json:"progress"`
+	Processed   int64     `json:"processed"`
+	Total       int64     `json:"total"`
+	DownloadURL *string   `json:"download_url,omitempty"`
+}
