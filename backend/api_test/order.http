@@ -1,11 +1,16 @@
+@url = http://localhost:8080
+@order_id = befa2802-c2c7-4d2e-a07c-3f0d72ed745c
+
 ### Health check
-GET http://localhost:8080/health
+GET {{url}}/health
 Accept: application/json
 
-
+### Get order by ID
+GET {{url}}/orders/{{order_id}}
+Accept: application/json
 
 ### Create order
-POST http://localhost:8080/orders
+POST {{url}}/orders
 Content-Type: application/json
 
 {

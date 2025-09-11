@@ -12,15 +12,62 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
 )
 
 type OrderHandlerInterface interface {
 	CreateOrder(c *gin.Context)
+	GetOrderByID(c *gin.Context)
 }
 type OrderHandler struct {
 	orderService service.OrderServiceInterface
 	validator    *v.Validator
+}
+
+// GetOrder implements OrderHandlerInterface.
+func (o *OrderHandler) GetOrderByID(c *gin.Context) {
+
+	var (
+		ctx = c.Request.Context()
+		res = response.GetOrderByIDResponse{}
+	)
+
+	orderID, err := uuid.Parse(c.Param("orderID"))
+	if err != nil {
+		log.Error().Err(err).Msg("[OrderHandler-4] GetOrderByID")
+		c.JSON(http.StatusBadRequest, response.ResponseError(http.StatusBadRequest, "invalid order ID"))
+		return
+	}
+
+	order, err := o.orderService.GetOrderByID(ctx, orderID)
+	if err != nil {
+		log.Error().Err(err).Msg("[OrderHandler-5] GetOrderByID")
+		if errors.Is(err, errs.ErrOrderNotFound) {
+			c.JSON(http.StatusNotFound, response.ResponseError(http.StatusNotFound, err.Error()))
+			return
+		}
+		c.JSON(http.StatusInternalServerError, response.ResponseError(http.StatusInternalServerError, err.Error()))
+		return
+	}
+
+	res.OrderID = order.ID
+	res.ProductID = order.ProductID
+	res.BuyerID = order.BuyerID
+	res.Quantity = order.Quantity
+	res.TotalCents = order.TotalCents
+	res.Status = order.Status
+
+	if order.Product != nil {
+		res.Product = &response.ProductDetails{
+			ID:         order.Product.ID,
+			Name:       order.Product.Name,
+			PriceCents: order.Product.PriceCents,
+		}
+	}
+
+	c.JSON(http.StatusOK, response.ResponseSuccess(http.StatusOK, "success", res))
+
 }
 
 // CreateOrder implements OrderHandlerInterface.

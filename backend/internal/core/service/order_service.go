@@ -6,16 +6,31 @@ import (
 	errs "backend-service/internal/core/domain/error"
 	"context"
 
+	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
 type OrderServiceInterface interface {
 	CreateOrder(ctx context.Context, order entity.OrderEntity) (*entity.OrderEntity, error)
+	GetOrderByID(ctx context.Context, orderID uuid.UUID) (*entity.OrderEntity, error)
 }
 
 type OrderService struct {
 	orderRepo   repository.OrderRepositoryInterface
 	productRepo repository.ProductRepositoryInterface
+}
+
+// GetOrderByID implements OrderServiceInterface.
+func (o *OrderService) GetOrderByID(ctx context.Context, orderID uuid.UUID) (*entity.OrderEntity, error) {
+
+	order, err := o.orderRepo.GetOrderByID(ctx, orderID)
+	if err != nil {
+		log.Error().Err(err).Msg("failed to get order by ID")
+	}
+
+	return order, err
+
 }
 
 // CreateOrder implements OrderServiceInterface.
