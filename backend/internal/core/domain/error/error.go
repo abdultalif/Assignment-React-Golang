@@ -11,4 +11,6 @@ var (
 	ErrInvalidDateRange = errors.New("invalid date range")
 
 	ErrJobNotFound = errors.New("job not found")
+
+	ErrJobCannotBeCancelled = errors.New("job cannot be cancelled")
 )

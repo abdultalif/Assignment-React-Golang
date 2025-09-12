@@ -18,11 +18,44 @@ import (
 type JobHandlerInterface interface {
 	CreateSettlementJob(c *gin.Context)
 	GetJob(c *gin.Context)
+	CancelJob(c *gin.Context)
 }
 
 type JobHandler struct {
 	jobService service.JobServiceInterface
 	validator  *v.Validator
+}
+
+// CancelJob implements JobHandlerInterface.
+func (j *JobHandler) CancelJob(c *gin.Context) {
+	var (
+		ctx = c.Request.Context()
+	)
+
+	jobID, err := uuid.Parse(c.Param("jobID"))
+	if err != nil {
+		log.Error().Err(err).Msg("[JobHandler-1] CancelJob: invalid job ID")
+		c.JSON(http.StatusBadRequest, response.ResponseError(http.StatusBadRequest, "invalid job ID"))
+		return
+	}
+
+	err = j.jobService.CancelJob(ctx, jobID)
+	if err != nil {
+		log.Error().Err(err).Str("job_id", jobID.String()).Msg("[JobHandler-2] CancelJob: failed to cancel job")
+
+		if errors.Is(err, errs.ErrJobNotFound) {
+			c.JSON(http.StatusNotFound, response.ResponseError(http.StatusNotFound, err.Error()))
+			return
+		} else if errors.Is(err, errs.ErrJobCannotBeCancelled) {
+			c.JSON(http.StatusBadRequest, response.ResponseError(http.StatusBadRequest, err.Error()))
+			return
+		} else {
+			c.JSON(http.StatusInternalServerError, response.ResponseError(http.StatusInternalServerError, err.Error()))
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, response.ResponseSuccess(http.StatusOK, "job cancellation requested", nil))
 }
 
 // GetJob implements JobHandlerInterface.

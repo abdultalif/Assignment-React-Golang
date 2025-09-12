@@ -240,6 +240,11 @@ func (w *WorkerPool) markJobAsCancelled(ctx context.Context, jobID uuid.UUID) {
 		log.Error().Err(err).Str("job_id", jobID.String()).Msg("Failed to mark job as cancelled")
 	}
 
+	err = w.jobRepo.UpdateCancelledFlag(ctx, jobID, true)
+	if err != nil {
+		log.Error().Err(err).Str("job_id", jobID.String()).Msg("Failed to update cancelled flag")
+	}
+
 	err = w.jobRepo.UpdateCompletedAt(ctx, jobID, &completedAt)
 	if err != nil {
 		log.Error().Err(err).Str("job_id", jobID.String()).Msg("Failed to update completed_at for cancelled job")

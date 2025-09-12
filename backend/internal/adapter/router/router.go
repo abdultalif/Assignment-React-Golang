@@ -18,6 +18,7 @@ func SetupRouter(orderHandler handler.OrderHandlerInterface, jobHandler handler.
 
 	r.POST("/jobs/settlement", jobHandler.CreateSettlementJob)
 	r.GET("/jobs/:jobID", jobHandler.GetJob)
+	r.POST("/jobs/:jobID/cancel", jobHandler.CancelJob)
 
 	return r
 }

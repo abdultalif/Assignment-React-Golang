@@ -21,10 +21,35 @@ type JobRepositoryInterface interface {
 	UpdateProgress(ctx context.Context, jobID uuid.UUID, progress int, processed int64) error
 	Complete(ctx context.Context, jobID uuid.UUID, resultPath string, completedAt *time.Time) error
 	UpdateCompletedAt(ctx context.Context, jobID uuid.UUID, completedAt *time.Time) error
+	UpdateCancelledFlag(ctx context.Context, jobID uuid.UUID, cancelled bool) error
 }
 
 type JobRepository struct {
 	db *gorm.DB
+}
+
+// UpdateCancelledFlag implements JobRepositoryInterface.
+func (j *JobRepository) UpdateCancelledFlag(ctx context.Context, jobID uuid.UUID, cancelled bool) error {
+
+	result := j.db.WithContext(ctx).Model(&model.JobModel{}).
+		Where("id = ?", jobID).
+		Updates(map[string]interface{}{
+			"cancelled":  cancelled,
+			"updated_at": time.Now(),
+		})
+
+	if result.Error != nil {
+		log.Error().Err(result.Error).Msg("[JobRepository] UpdateCancelledFlag: failed to update cancelled flag")
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		log.Error().Msg("[JobRepository] UpdateCancelledFlag: job not found")
+		return errs.ErrJobNotFound
+	}
+
+	return nil
+
 }
 
 // UpdateCompletedAt implements JobRepositoryInterface.
@@ -143,6 +168,8 @@ func (j *JobRepository) GetByID(ctx context.Context, jobID uuid.UUID) (*entity.J
 		Type:        modelJob.Type,
 		Status:      modelJob.Status,
 		Total:       modelJob.Total,
+		Progress:    modelJob.Progress,
+		Processed:   modelJob.Processed,
 		Params:      modelJob.Params,
 		UniqueRunID: modelJob.UniqueRunID,
 		ResultPath:  modelJob.ResultPath,

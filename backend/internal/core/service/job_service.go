@@ -18,6 +18,7 @@ type JobServiceInterface interface {
 	CreateSettlementJob(ctx context.Context, from string, to string) (*entity.JobEntity, error)
 	GetJob(ctx context.Context, jobID uuid.UUID) (*entity.JobEntity, error)
 	StartWorkerPool(ctx context.Context)
+	CancelJob(ctx context.Context, jobID uuid.UUID) error
 }
 
 type JobService struct {
@@ -25,6 +26,51 @@ type JobService struct {
 	transactionRepo repository.TransactionRepositoryInterface
 	workerPool      *WorkerPool
 	activeJobs      map[uuid.UUID]chan bool
+}
+
+// CancelJob implements JobServiceInterface.
+func (j *JobService) CancelJob(ctx context.Context, jobID uuid.UUID) error {
+
+	job, err := j.jobRepo.GetByID(ctx, jobID)
+	if err != nil {
+		log.Error().Err(err).Str("job_id", jobID.String()).Msg("[JobService-1] CancelJob: failed to get job")
+		return err
+	}
+
+	if job.Status != "QUEUED" && job.Status != "RUNNING" {
+		return errs.ErrJobCannotBeCancelled
+	}
+
+	if cancelChan, exists := j.activeJobs[jobID]; exists {
+		select {
+		case cancelChan <- true:
+			log.Info().Str("job_id", jobID.String()).Msg("[JobService-2] CancelJob: Cancellation signal sent to worker")
+		default:
+			log.Warn().Str("job_id", jobID.String()).Msg("[JobService-3] CancelJob: Cancellation signal already sent or worker not listening")
+		}
+		delete(j.activeJobs, jobID)
+	}
+
+	if job.Status == "QUEUED" {
+		completedAt := time.Now()
+		err = j.jobRepo.UpdateStatus(ctx, jobID, "CANCELLED", nil)
+		if err != nil {
+			log.Error().Err(err).Str("job_id", jobID.String()).Msg(" [JobService-4] CancelJob: Failed to update job status to CANCELLED")
+			return err
+		}
+
+		err = j.jobRepo.UpdateCancelledFlag(ctx, jobID, true)
+		if err != nil {
+			log.Error().Err(err).Str("job_id", jobID.String()).Msg("[JobService-5] CancelJob: Failed to update cancelled flag for cancelled job")
+		}
+
+		err = j.jobRepo.UpdateCompletedAt(ctx, jobID, &completedAt)
+		if err != nil {
+			log.Error().Err(err).Str("job_id", jobID.String()).Msg("[JobService-5] CancelJob: Failed to update completed_at for cancelled job")
+		}
+	}
+
+	return nil
 }
 
 // StartWorkerPool implements JobServiceInterface.
