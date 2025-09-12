@@ -1,12 +1,12 @@
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import UserManagement from './pages/UserManagement';
 
-
-function App() {
+export default function App() {
+  const queryClient = new QueryClient();
 
   return (
-    <>
-     <h1 className="text-3xl font-bold text-red-300">Test dulu kali ya</h1>
-    </>
-  )
+    <QueryClientProvider client={queryClient}>
+      <UserManagement />
+    </QueryClientProvider>
+  );
 }
-
-export default App
