@@ -36,7 +36,7 @@ func (o *OrderHandler) GetOrderByID(c *gin.Context) {
 	orderID, err := uuid.Parse(c.Param("orderID"))
 	if err != nil {
 		log.Error().Err(err).Msg("[OrderHandler-4] GetOrderByID")
-		c.JSON(http.StatusBadRequest, response.ResponseError(http.StatusBadRequest, "invalid order ID"))
+		c.JSON(http.StatusBadRequest, response.ResponseError(http.StatusBadRequest, "order ID must be a valid UUID"))
 		return
 	}
 

@@ -33,6 +33,6 @@ Content-Type: application/json
 GET {{url}}/jobs/a345dd08-6718-4d59-bbaa-0b2688f95b08
 Accept: application/json
 
-### Cancel job by ID (ini blm clear)
+### Cancel job by ID
 POST {{url}}/jobs/073da6e0-a55e-4179-b792-221e4750e474/cancel
 Accept: application/json

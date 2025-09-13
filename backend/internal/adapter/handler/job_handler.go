@@ -34,8 +34,8 @@ func (j *JobHandler) CancelJob(c *gin.Context) {
 
 	jobID, err := uuid.Parse(c.Param("jobID"))
 	if err != nil {
-		log.Error().Err(err).Msg("[JobHandler-1] CancelJob: invalid job ID")
-		c.JSON(http.StatusBadRequest, response.ResponseError(http.StatusBadRequest, "invalid job ID"))
+		log.Error().Err(err).Msg("[JobHandler-1] CancelJob: Job ID must be a valid UUID")
+		c.JSON(http.StatusBadRequest, response.ResponseError(http.StatusBadRequest, "Job ID must be a valid UUID"))
 		return
 	}
 
@@ -68,8 +68,8 @@ func (j *JobHandler) GetJob(c *gin.Context) {
 
 	jobID, err := uuid.Parse(c.Param("jobID"))
 	if err != nil {
-		log.Error().Err(err).Msg("[JobHandler-1] GetJob: invalid job ID")
-		c.JSON(http.StatusBadRequest, response.ResponseError(http.StatusBadRequest, "invalid job ID"))
+		log.Error().Err(err).Msg("[JobHandler-1] GetJob: Job ID must be a valid UUID")
+		c.JSON(http.StatusBadRequest, response.ResponseError(http.StatusBadRequest, "Job ID must be a valid UUID"))
 		return
 	}
 
