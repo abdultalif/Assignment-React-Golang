@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { createUser, fetchUsers } from '../api/user';
+import { createUser, deleteUser, fetchUsers, updateUser } from '../api/user';
 import { useDarkMode } from '../hooks/UseDarkMode';
 import type { NewUser, ToastState, User } from '../types/user';
 import AddUserModal from '../components/AddUserModal';
 import Toast from '../components/Toast';
+import EditUserModal from '../components/EditUserModal';
 
 export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,6 +18,9 @@ export default function UserManagement() {
     type: 'success',
     isVisible: false
   });
+  
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
   const queryClient = useQueryClient();
   
@@ -38,6 +42,35 @@ export default function UserManagement() {
     },
   });
 
+  const updateUserMutation = useMutation({
+    mutationFn: ({ id, userData }: { id: number; userData: Partial<NewUser> }) => 
+      updateUser(id, userData),
+    onSuccess: (updatedUser, { id }) => {
+      queryClient.setQueryData(['users'], (old: User[] = []) => 
+        old.map(user => user.id === id ? updatedUser : user)
+      );
+      setToast({ message: 'User updated successfully!', type: 'success', isVisible: true });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setToast({ message: 'Failed to update user. Please try again.', type: 'error', isVisible: true });
+    },
+  });
+
+    const deleteUserMutation = useMutation({
+      mutationFn: deleteUser,
+      onSuccess: (_, deletedId) => {
+        queryClient.setQueryData(['users'], (old: User[] = []) => 
+          old.filter(user => user.id !== deletedId)
+        );
+        setToast({ message: 'User deleted successfully!', type: 'success', isVisible: true });
+      },
+      onError: () => {
+        queryClient.invalidateQueries({ queryKey: ['users'] });
+        setToast({ message: 'Failed to delete user. Please try again.', type: 'error', isVisible: true });
+      },
+    });
+
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -52,6 +85,26 @@ export default function UserManagement() {
 
   const handleAddUser = (user: NewUser) => {
     createUserMutation.mutate(user);
+  };
+
+  const handleEditUser = (id: number, userData: Partial<NewUser>) => {
+    updateUserMutation.mutate({ id, userData });
+  };
+
+  const handleDeleteUser = (id: number, userName: string) => {
+    if (window.confirm(`Are you sure you want to delete ${userName}?`)) {
+      deleteUserMutation.mutate(id);
+    }
+  };
+
+  const handleOpenEditModal = (user: User) => {
+    setSelectedUser(user);
+    setIsEditModalOpen(true);
+  };
+
+  const handleCloseEditModal = () => {
+    setSelectedUser(null);
+    setIsEditModalOpen(false);
   };
 
   const paginate = (pageNumber: number) => {
@@ -200,6 +253,7 @@ export default function UserManagement() {
                   <th className="px-8 py-6 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Name</th>
                   <th className="px-8 py-6 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Email</th>
                   <th className="px-8 py-6 text-left text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Company</th>
+                  <th className="px-8 py-6 text-center text-xs font-bold text-gray-600 dark:text-gray-300 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -272,6 +326,30 @@ export default function UserManagement() {
                         <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-200">
                           {user.company.name}
                         </span>
+                      </td>
+                      <td className="px-8 py-6 whitespace-nowrap text-center">
+                        <div className="flex items-center justify-center space-x-3">
+                          <button
+                            onClick={() => handleOpenEditModal(user)}
+                            disabled={updateUserMutation.isPending}
+                            className="text-blue-600 hover:text-blue-800 dark:hover:text-blue-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 p-2 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg group/edit"
+                            title="Edit user"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => handleDeleteUser(user.id, user.name)}
+                            disabled={deleteUserMutation.isPending}
+                            className="text-red-600 hover:text-red-800 dark:hover:text-red-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 p-2 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg group/delete"
+                            title="Delete user"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -421,6 +499,13 @@ export default function UserManagement() {
         type={toast.type} 
         isVisible={toast.isVisible} 
         onClose={() => setToast(prev => ({ ...prev, isVisible: false }))} 
+      />
+
+        <EditUserModal 
+        isOpen={isEditModalOpen} 
+        user={selectedUser}
+        onClose={handleCloseEditModal} 
+        onSubmit={handleEditUser} 
       />
     </div>
   );

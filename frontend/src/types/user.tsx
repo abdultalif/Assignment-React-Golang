@@ -34,3 +34,10 @@ export interface ToastProps {
   isVisible: boolean;
   onClose: () => void;
 }
+
+export interface EditUserModalProps {
+  isOpen: boolean;
+  user: User | null;
+  onClose: () => void;
+  onSubmit: (id: number, user: Partial<NewUser>) => void;
+}
