@@ -1,18 +1,43 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { fetchUsers } from '../api/user';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { createUser, fetchUsers } from '../api/user';
 import { useDarkMode } from '../hooks/UseDarkMode';
+import type { NewUser, ToastState, User } from '../types/user';
+import AddUserModal from '../components/AddUserModal';
+import Toast from '../components/Toast';
 
 export default function UserManagement() {
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [usersPerPage] = useState(5);
   const [isDarkMode, setIsDarkMode] = useDarkMode();
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [toast, setToast] = useState<ToastState>({
+    message: '',
+    type: 'success',
+    isVisible: false
+  });
+
+  const queryClient = useQueryClient();
   
   const { data: users = [], isLoading, error, isError } = useQuery({
     queryKey: ['users'],
     queryFn: fetchUsers,
   });
+
+    
+  const createUserMutation = useMutation({
+    mutationFn: createUser,
+    onSuccess: (newUser) => {
+      queryClient.setQueryData(['users'], (old: User[] = []) => [...old, newUser]);
+      setToast({ message: 'User added successfully!', type: 'success', isVisible: true });
+    },
+    onError: () => {
+      queryClient.invalidateQueries({ queryKey: ['users'] });
+      setToast({ message: 'Failed to add user. Please try again.', type: 'error', isVisible: true });
+    },
+  });
+
 
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -25,6 +50,9 @@ export default function UserManagement() {
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage);
 
+  const handleAddUser = (user: NewUser) => {
+    createUserMutation.mutate(user);
+  };
 
   const paginate = (pageNumber: number) => {
     setCurrentPage(pageNumber);
@@ -51,7 +79,8 @@ export default function UserManagement() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50 to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
+        
+      
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
@@ -106,6 +135,60 @@ export default function UserManagement() {
               </button>
             )}
           </div>
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            disabled={createUserMutation.isPending}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-2xl hover:from-blue-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3 transform hover:scale-105 transition-all duration-200 shadow-lg hover:shadow-xl font-semibold"
+          >
+            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+            </svg>
+            Add New User
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Total Users</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{users.length}</p>
+              </div>
+              <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-xl">
+                <svg className="h-8 w-8 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+            </div>
+          </section>
+          
+          <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Filtered Results</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{filteredUsers.length}</p>
+              </div>
+              <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-xl">
+                <svg className="h-8 w-8 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
+            </div>
+          </section>
+          
+          <section className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-gray-600 dark:text-gray-400 text-sm font-medium">Current Page</p>
+                <p className="text-3xl font-bold text-gray-900 dark:text-white">{currentPage} / {totalPages || 1}</p>
+              </div>
+              <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-xl">
+                <svg className="h-8 w-8 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+              </div>
+            </div>
+          </section>
         </div>
 
         <div className="bg-white dark:bg-gray-800 shadow-2xl rounded-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
@@ -153,7 +236,7 @@ export default function UserManagement() {
                 ) : (
                   currentUsers.map((user, index) => (
                     <tr 
-                      key={user.id} 
+                      key={`${user.id}-${user.email}-${index}`}
                       className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors duration-200 group"
                       style={{
                         animationDelay: `${index * 50}ms`,
@@ -327,6 +410,18 @@ export default function UserManagement() {
           )}
         </div>
       </div>
+      <AddUserModal
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onSubmit={handleAddUser} 
+      />
+
+      <Toast
+        message={toast.message} 
+        type={toast.type} 
+        isVisible={toast.isVisible} 
+        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))} 
+      />
     </div>
   );
 };
